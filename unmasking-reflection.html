@@ -1,187 +1,217 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Unmasking AI — Reflection</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Unmasking AI — interactive reflections</title>
+<link rel="preconnect" href="https://fonts.gstatic.com">
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
   :root{
-    --bg:#071029; --muted:#94a3b8; --accent:#60a5fa; --glass: rgba(255,255,255,0.03);
+    --bg:#071029; --card:#0b1220; --muted:#94a3b8; --accent:#60a5fa;
   }
   *{box-sizing:border-box}
-  body{margin:0; font-family:Inter,system-ui,Arial; background:linear-gradient(180deg,#071029,#071a2a); color:#e6eef8;}
-  .wrap{max-width:980px;margin:28px auto;padding:22px;}
-  .hero{display:flex;gap:22px;align-items:center;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:20px;border-radius:12px;}
-  .face{width:180px;height:180px;border-radius:12px;background:linear-gradient(135deg,#2b6cb0,#60a5fa);display:grid;place-items:center;position:relative;cursor:pointer;flex:0 0 180px;overflow:hidden}
-  .mask{position:absolute;inset:0;background:linear-gradient(90deg, rgba(0,0,0,0.75), rgba(0,0,0,0.55));transition:transform 700ms cubic-bezier(.2,.9,.3,1),opacity 400ms}
-  .face.unmasked .mask{transform:translateY(-140%);opacity:0;pointer-events:none}
-  .hero-text h1{margin:0 0 6px 0;font-size:20px}
-  p.lead{margin:0;color:var(--muted);font-size:14px}
-  .controls{margin-top:12px;display:flex;gap:8px;align-items:center}
-  select{background:transparent;color:#e6eef8;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04)}
-  .quotes{margin-top:18px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-  .card{background:var(--glass);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);min-height:90px;position:relative;overflow:hidden}
-  .quote-text{font-size:15px;color:#f0f7ff;line-height:1.35}
-  .meta{font-size:12px;color:var(--muted);margin-top:8px}
-  .expand{position:absolute;right:10px;bottom:10px;color:var(--accent);cursor:pointer;font-size:12px}
-  .expanded-body{display:none;margin-top:10px;color:var(--muted);font-size:13px;border-top:1px dashed rgba(255,255,255,0.03);padding-top:8px}
-  .card.expanded .expanded-body{display:block}
-  .card.expanded .expand{display:none}
-  .reflection{margin-top:18px;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01))}
-  textarea{width:100%;min-height:84px;background:transparent;border:1px dashed rgba(255,255,255,0.04);color:#e6eef8;padding:10px;border-radius:8px;resize:vertical}
-  button{background:var(--accent);color:#04263b;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
-  footer{margin-top:16px;color:var(--muted);font-size:13px;text-align:center}
-  @media (max-width:760px){ .quotes{grid-template-columns:1fr} .face{width:120px;height:120px} }
+  body{
+    margin:0;
+    font-family:Inter,system-ui,Arial;
+    background:linear-gradient(180deg,#041226 0%, #071a2a 70%);
+    color:#e6eef8;
+    -webkit-font-smoothing:antialiased;
+  }
+  .container{max-width:1100px;margin:28px auto;padding:20px;}
+  header{display:flex;align-items:center;gap:18px;margin-bottom:18px}
+  header h1{margin:0;font-size:22px}
+  header p{margin:2px 0 0 0;color:var(--muted);font-size:14px}
+
+  /* grid */
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:12px}
+  @media (max-width:780px){ .grid{grid-template-columns:1fr} }
+
+  /* card (flip) */
+  .card {
+    perspective:1200px;
+    width:100%;
+    height:210px;
+  }
+  .card-inner {
+    position:relative;
+    width:100%;
+    height:100%;
+    transform-style:preserve-3d;
+    transition: transform 700ms cubic-bezier(.2,.9,.3,1);
+    border-radius:12px;
+    box-shadow: 0 12px 30px rgba(2,6,23,0.6);
+  }
+  .card.flipped .card-inner { transform: rotateY(180deg); }
+
+  .face-panel {
+    position:absolute; inset:0; backface-visibility:hidden;
+    border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.03);
+  }
+
+  /* front (masked) */
+  .front { padding:16px; }
+  .mask-wrap{ position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+  .face-ico {
+    width:110px; height:110px; border-radius:18px; display:grid; place-items:center; color:#fff;
+    box-shadow: 0 8px 18px rgba(2,6,23,0.6);
+    transition: transform 350ms;
+  }
+  .face-ico svg{ width:64px; height:64px; opacity:0.95 }
+
+  .face-caption { position:absolute; bottom:10px; left:12px; font-size:12px; color:var(--muted); }
+
+  /* back (unmasked with quote) */
+  .back { transform: rotateY(180deg); padding:18px; color:#eaf2ff; align-items:flex-start; justify-content:flex-start; }
+  .quote { font-size:15px; line-height:1.35; margin-bottom:10px; font-weight:600 }
+  .note { font-size:13px; color:var(--muted); margin-bottom:12px }
+  .small-reflect { font-size:13px; color:#cfe6ff; opacity:0.95 }
+
+  /* little rotate when hovered */
+  .card:hover .face-ico { transform: translateY(-6px); }
+
+  /* heading underline */
+  .hr { height:1px; background:linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent); margin:18px 0;border-radius:2px; }
+
+  footer { margin-top:18px; font-size:14px; color:var(--muted); padding:14px; background:rgba(255,255,255,0.01); border-radius:10px; border:1px solid rgba(255,255,255,0.02) }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="hero">
-      <div class="face" id="faceBtn" title="Click to unmask">
-        <svg viewBox="0 0 64 64" fill="none" style="width:70%;height:70%" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-          <g transform="translate(4,4)" stroke="rgba(255,255,255,0.9)" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+  <div class="container">
+    <header>
+      <div style="width:84px;height:84px;border-radius:12px;background:linear-gradient(135deg,#2b6cb0,#60a5fa);display:grid;place-items:center;box-shadow:0 8px 24px rgba(2,6,23,0.6)">
+        <!-- simple masked icon -->
+        <svg viewBox="0 0 64 64" width="44" height="44" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="1">
+          <g transform="translate(4,4)">
             <circle cx="28" cy="28" r="26" fill="rgba(255,255,255,0.03)"/>
-            <path d="M14 30c3-6 20-6 23 0" stroke-linecap="round"/>
-            <circle cx="18" cy="22" r="3.3" fill="rgba(255,255,255,0.95)"/>
-            <circle cx="38" cy="22" r="3.3" fill="rgba(255,255,255,0.95)"/>
+            <circle cx="18" cy="22" r="3.4" fill="rgba(255,255,255,0.95)"/>
+            <circle cx="38" cy="22" r="3.4" fill="rgba(255,255,255,0.95)"/>
+            <rect x="7" y="29" width="34" height="8" rx="2" fill="rgba(0,0,0,0.6)"/>
           </g>
         </svg>
-        <div class="mask" id="maskEl" aria-hidden>
-          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" style="opacity:0.98">
-            <rect x="2" y="7" width="20" height="10" rx="2" fill="rgba(0,0,0,0.65)" stroke="rgba(255,255,255,0.06)"/>
-          </svg>
-        </div>
       </div>
-
-      <div class="hero-text" style="flex:1">
-        <h1>Unmasking AI — interactive reflection</h1>
-        <p class="lead">Click the face to unmask ideas. Switch quote set using the dropdown to see different lenses on the book.</p>
-
-        <div class="controls">
-          <label style="font-size:13px;color:var(--muted)">Quote set:</label>
-          <select id="setSelect" aria-label="Choose quote set">
-            <option value="paraphrase">Paraphrases (recommended)</option>
-            <option value="themes">Thematic highlights</option>
-            <option value="user">Your quotes (paste below)</option>
-          </select>
-          <button id="refreshBtn" style="margin-left:8px">Load set</button>
-        </div>
+      <div>
+        <h1 style="margin:0;font-size:22px">Unmasking AI — interactive reflections</h1>
+        <p style="margin:6px 0 0 0;color:var(--muted)">Click any masked face to flip it and reveal the unmasked face, a quote, and a short reflection.</p>
       </div>
-    </div>
+    </header>
 
-    <div class="quotes" id="quotesGrid" aria-live="polite"></div>
+    <div class="grid" id="cardsGrid"></div>
 
-    <div class="reflection">
-      <h3 style="margin:0 0 8px 0">Overall resonance — one-line</h3>
-      <p style="margin:0 0 10px 0;color:var(--muted);font-size:13px">Write one sentence about how <em>Unmasking AI</em> changed you.</p>
-      <textarea id="finalReflection" placeholder="Example: It made me reframe 'neutral' data as a political choice."></textarea>
-      <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
-        <button id="saveBtn">Save JSON</button>
-        <button id="downloadHtml">Download HTML</button>
-        <span style="color:var(--muted);font-size:13px">or paste into Canvas.</span>
-      </div>
-    </div>
+    <div class="hr"></div>
 
-    <footer>Interactive reflection — click the face, unmask the ideas, and leave your note below.</footer>
+    <footer>
+      <strong>Understanding in one paragraph:</strong>
+      <p style="margin:8px 0 0 0; color:#eaf2ff;">
+        Joy Buolamwini's work reminded me that machine "vision" reflects the choices, omissions, and power structures of its creators.
+        What looks like a neutral algorithm often invisibilizes people who were not represented in the data, amplifying harms.
+        Unmasking those failures — through testing, documentation, and inclusive practice — is the first necessary step toward designing AI systems that recognize and respect all people.
+      </p>
+    </footer>
   </div>
 
 <script>
-/* ======= Quote sets =======
-  Note: These paraphrases are short, non-exact phrasings of themes from Unmasking AI for safe use.
-  Replace "userQuotes" array with exact short quotes if you have them and want verbatim text.
+/* Data: 10 distinct cards.
+   Each card will show a masked face on the front and an unmasked face + quote + reflection on the back.
+   You can replace quotes/notes with exact lines you prefer.
 */
-const sets = {
-  paraphrase: [
-    {q:"I was not seen by the machines the same way I saw myself.", note:"Made me realize tools can erase identity by design."},
-    {q:"Datasets tell stories — and some voices are missing.", note:"Prompted me to think about who is counted in data."},
-    {q:"Testing systems reveals bias that metrics miss.", note:"Shows the need for active auditing, not just benchmarks."},
-    {q:"Representation in datasets changes outcomes.", note:"Reinforced why diverse data matters."},
-    {q:"Explainability without fairness is limited.", note:"Explanations must be coupled with accountability."},
-    {q:"I tested till my face was recognized.", note:"Her persistence highlighted how much effort reveals problems."},
-    {q:"Technical measures miss lived experience sometimes.", note:"Pushed me to value qualitative evidence."},
-    {q:"Neutral tools still carry assumptions.", note:"A reminder to question default design choices."},
-    {q:"Audits and inclusive teams improve systems.", note:"Encouraged me to support diverse engineering teams."},
-    {q:"Unmasking is the first step toward repair.", note:"Identifying harms is necessary before fixing them."}
-  ],
-  themes: [
-    {q:"Invisibility and recognition", note:"How systems can fail to 'see' certain people."},
-    {q:"Data as narrative", note:"Datasets encode selective stories."},
-    {q:"Audits as civic tools", note:"Auditing is a public-good activity."},
-    {q:"Representation matters", note:"Who’s in the data determines outputs."},
-    {q:"Explainability vs justice", note:"Explainability alone won't fix harm."},
-    {q:"Persistence and testing", note:"Iterative testing uncovers edge failures."},
-    {q:"Lived experience as evidence", note:"Personal stories are valid technical input."},
-    {q:"Question assumptions", note:"Design defaults reflect values."},
-    {q:"Teams and inclusion", note:"Diverse teams lead to better outcomes."},
-    {q:"From discovery to repair", note:"Identification leads to remediation."}
-  ],
-  user: [
-    // Empty placeholders for verbatim quotes / your custom text.
-    {q:"(paste your quote 1 here)", note:"(your short reaction)"},
-    {q:"(paste your quote 2 here)", note:"(your short reaction)"},
-    {q:"(paste your quote 3 here)", note:"(your short reaction)"},
-    {q:"(paste your quote 4 here)", note:"(your short reaction)"},
-    {q:"(paste your quote 5 here)", note:"(your short reaction)"},
-    {q:"(paste your quote 6 here)", note:"(your short reaction)"},
-    {q:"(paste your quote 7 here)", note:"(your short reaction)"},
-    {q:"(paste your quote 8 here)", note:"(your short reaction)"},
-    {q:"(paste your quote 9 here)", note:"(your short reaction)"},
-    {q:"(paste your quote 10 here)", note:"(your short reaction)"}
-  ]
-};
+const cards = [
+  { quote: "I was not seen by the machines the same way I saw myself.", note: "Made me realize tools can erase identity by design." },
+  { quote: "Datasets tell stories — and some voices are missing.", note: "Prompted me to think harder about who we include in data." },
+  { quote: "Testing systems reveals bias that metrics miss.", note: "Shows why active auditing is needed in practice." },
+  { quote: "Representation in datasets changes outcomes.", note: "A simple reminder that data composition matters." },
+  { quote: "Explainability without fairness is limited.", note: "Interpretability alone doesn't fix injustices." },
+  { quote: "I kept testing systems until my face was recognized.", note: "Her persistence highlights how much effort it takes to reveal bias." },
+  { quote: "Technical metrics sometimes miss lived experience.", note: "Valuing qualitative stories is crucial evidence." },
+  { quote: "Tools that claim neutrality carry hidden assumptions.", note: "Design defaults encode values; we must question them." },
+  { quote: "Audits and inclusive teams create better systems.", note: "Diversity in teams improves the final product." },
+  { quote: "Unmasking is the first step toward repair.", note: "Identifying harms enables practical remediation." }
+];
 
-const grid = document.getElementById('quotesGrid');
-const select = document.getElementById('setSelect');
-const refreshBtn = document.getElementById('refreshBtn');
-
-function clearGrid(){ grid.innerHTML = ''; }
-
-function renderSet(name){
-  clearGrid();
-  const arr = sets[name] || [];
-  arr.forEach((it,i)=>{
-    const el = document.createElement('article');
-    el.className = 'card';
-    el.tabIndex = 0;
-    el.innerHTML = `
-      <div class="quote-text">“${it.q}”</div>
-      <div class="meta">Quote ${i+1}</div>
-      <div class="expand">Read note</div>
-      <div class="expanded-body"><strong>My note:</strong><div style="margin-top:6px">${it.note}</div></div>
-    `;
-    el.querySelector('.expand').addEventListener('click', ()=> el.classList.toggle('expanded'));
-    el.addEventListener('keydown', (ev)=> { if(ev.key === 'Enter') el.classList.toggle('expanded'); });
-    grid.appendChild(el);
-  });
+// helper to create a visually different "face" by hue
+function faceGradient(i){
+  const hues = [210,197,190,165,140,250,20,340,280,200];
+  const h = hues[i % hues.length];
+  return `linear-gradient(135deg, hsl(${h} 70% 45%), hsl(${(h+20)%360} 75% 55%))`;
 }
 
-/* initial render */
-renderSet('paraphrase');
+// build card DOM
+const grid = document.getElementById('cardsGrid');
+cards.forEach((c, i) => {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'card';
+  wrapper.style.cursor = 'pointer';
 
-refreshBtn.addEventListener('click', ()=> renderSet(select.value));
+  // inner
+  const inner = document.createElement('div');
+  inner.className = 'card-inner';
 
-/* mask / unmask */
-const faceBtn = document.getElementById('faceBtn');
-faceBtn.addEventListener('click', ()=> faceBtn.classList.toggle('unmasked'));
+  // front
+  const front = document.createElement('div');
+  front.className = 'face-panel front';
+  front.innerHTML = `
+    <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:12px">
+      <div class="face-ico" style="background:${faceGradient(i)};border-radius:16px;display:grid;place-items:center">
+        <!-- face SVG (masked) -->
+        <svg viewBox="0 0 64 64" width="64" height="64" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="1">
+          <g transform="translate(4,4)">
+            <circle cx="28" cy="28" r="26" fill="rgba(255,255,255,0.04)"/>
+            <circle cx="18" cy="22" r="3.6" fill="rgba(255,255,255,0.95)"/>
+            <circle cx="38" cy="22" r="3.6" fill="rgba(255,255,255,0.95)"/>
+            <rect x="7" y="29" width="34" height="8" rx="2" fill="rgba(0,0,0,0.6)"/>
+          </g>
+        </svg>
+      </div>
+      <div class="face-caption">Masked face — click to unmask</div>
+    </div>
+  `;
 
-/* save json */
-document.getElementById('saveBtn').addEventListener('click', ()=>{
-  const final = document.getElementById('finalReflection').value.trim();
-  const payload = { timestamp: (new Date()).toISOString(), set: select.value, quotes: sets[select.value], final_reflection: final };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'unmasking-reflection.json';
-  document.body.appendChild(a); a.click(); a.remove();
-  alert('Saved reflection JSON.');
+  // back (unmasked)
+  const back = document.createElement('div');
+  back.className = 'face-panel back';
+  back.innerHTML = `
+    <div style="width:100%;height:100%;display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-start">
+      <div style="display:flex;gap:12px;align-items:flex-start;width:100%">
+        <div style="width:84px;height:84px;border-radius:12px;flex:0 0 84px;background:${faceGradient(i)};display:grid;place-items:center;box-shadow:0 8px 18px rgba(2,6,23,0.5)">
+          <!-- unmasked svg (eyes + mouth) -->
+          <svg viewBox="0 0 64 64" width="48" height="48" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="1">
+            <g transform="translate(4,4)">
+              <circle cx="28" cy="28" r="26" fill="rgba(255,255,255,0.02)"/>
+              <path d="M14 26c3-5 20-5 23 0" stroke-linecap="round" stroke-width="1.4"/>
+              <circle cx="18" cy="22" r="3.6" fill="rgba(255,255,255,0.95)"/>
+              <circle cx="38" cy="22" r="3.6" fill="rgba(255,255,255,0.95)"/>
+            </g>
+          </svg>
+        </div>
+        <div style="flex:1">
+          <div class="quote">“${escapeHtml(c.quote)}”</div>
+          <div class="note">${escapeHtml(c.note)}</div>
+        </div>
+      </div>
+      <div style="margin-top:6px" class="small-reflect">Reflection: ${escapeHtml(c.note)}</div>
+    </div>
+  `;
+
+  inner.appendChild(front);
+  inner.appendChild(back);
+  wrapper.appendChild(inner);
+
+  // toggle flip on click
+  wrapper.addEventListener('click', () => wrapper.classList.toggle('flipped'));
+  // allow keyboard toggle
+  wrapper.tabIndex = 0;
+  wrapper.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' ') wrapper.classList.toggle('flipped'); });
+
+  grid.appendChild(wrapper);
 });
 
-/* download current HTML (static snapshot) */
-document.getElementById('downloadHtml').addEventListener('click', ()=>{
-  // create a blob of the current document's outerHTML
-  const doc = '<!doctype html>\\n' + document.documentElement.outerHTML;
-  const blob = new Blob([doc], {type:'text/html'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'unmasking-reflection.html';
-  document.body.appendChild(a); a.click(); a.remove();
-});
+/* small helper to escape text for HTML insertion (safety) */
+function escapeHtml(s){
+  if(!s) return '';
+  return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+}
 </script>
 </body>
 </html>
