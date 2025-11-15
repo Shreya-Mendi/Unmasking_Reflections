@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Unmasking AI — Reflection</title>
+<style>
+  :root{
+    --bg:#071029; --muted:#94a3b8; --accent:#60a5fa; --glass: rgba(255,255,255,0.03);
+  }
+  *{box-sizing:border-box}
+  body{margin:0; font-family:Inter,system-ui,Arial; background:linear-gradient(180deg,#071029,#071a2a); color:#e6eef8;}
+  .wrap{max-width:980px;margin:28px auto;padding:22px;}
+  .hero{display:flex;gap:22px;align-items:center;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:20px;border-radius:12px;}
+  .face{width:180px;height:180px;border-radius:12px;background:linear-gradient(135deg,#2b6cb0,#60a5fa);display:grid;place-items:center;position:relative;cursor:pointer;flex:0 0 180px;overflow:hidden}
+  .mask{position:absolute;inset:0;background:linear-gradient(90deg, rgba(0,0,0,0.75), rgba(0,0,0,0.55));transition:transform 700ms cubic-bezier(.2,.9,.3,1),opacity 400ms}
+  .face.unmasked .mask{transform:translateY(-140%);opacity:0;pointer-events:none}
+  .hero-text h1{margin:0 0 6px 0;font-size:20px}
+  p.lead{margin:0;color:var(--muted);font-size:14px}
+  .controls{margin-top:12px;display:flex;gap:8px;align-items:center}
+  select{background:transparent;color:#e6eef8;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04)}
+  .quotes{margin-top:18px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .card{background:var(--glass);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);min-height:90px;position:relative;overflow:hidden}
+  .quote-text{font-size:15px;color:#f0f7ff;line-height:1.35}
+  .meta{font-size:12px;color:var(--muted);margin-top:8px}
+  .expand{position:absolute;right:10px;bottom:10px;color:var(--accent);cursor:pointer;font-size:12px}
+  .expanded-body{display:none;margin-top:10px;color:var(--muted);font-size:13px;border-top:1px dashed rgba(255,255,255,0.03);padding-top:8px}
+  .card.expanded .expanded-body{display:block}
+  .card.expanded .expand{display:none}
+  .reflection{margin-top:18px;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01))}
+  textarea{width:100%;min-height:84px;background:transparent;border:1px dashed rgba(255,255,255,0.04);color:#e6eef8;padding:10px;border-radius:8px;resize:vertical}
+  button{background:var(--accent);color:#04263b;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+  footer{margin-top:16px;color:var(--muted);font-size:13px;text-align:center}
+  @media (max-width:760px){ .quotes{grid-template-columns:1fr} .face{width:120px;height:120px} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="face" id="faceBtn" title="Click to unmask">
+        <svg viewBox="0 0 64 64" fill="none" style="width:70%;height:70%" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+          <g transform="translate(4,4)" stroke="rgba(255,255,255,0.9)" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="28" cy="28" r="26" fill="rgba(255,255,255,0.03)"/>
+            <path d="M14 30c3-6 20-6 23 0" stroke-linecap="round"/>
+            <circle cx="18" cy="22" r="3.3" fill="rgba(255,255,255,0.95)"/>
+            <circle cx="38" cy="22" r="3.3" fill="rgba(255,255,255,0.95)"/>
+          </g>
+        </svg>
+        <div class="mask" id="maskEl" aria-hidden>
+          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" style="opacity:0.98">
+            <rect x="2" y="7" width="20" height="10" rx="2" fill="rgba(0,0,0,0.65)" stroke="rgba(255,255,255,0.06)"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="hero-text" style="flex:1">
+        <h1>Unmasking AI — interactive reflection</h1>
+        <p class="lead">Click the face to unmask ideas. Switch quote set using the dropdown to see different lenses on the book.</p>
+
+        <div class="controls">
+          <label style="font-size:13px;color:var(--muted)">Quote set:</label>
+          <select id="setSelect" aria-label="Choose quote set">
+            <option value="paraphrase">Paraphrases (recommended)</option>
+            <option value="themes">Thematic highlights</option>
+            <option value="user">Your quotes (paste below)</option>
+          </select>
+          <button id="refreshBtn" style="margin-left:8px">Load set</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="quotes" id="quotesGrid" aria-live="polite"></div>
+
+    <div class="reflection">
+      <h3 style="margin:0 0 8px 0">Overall resonance — one-line</h3>
+      <p style="margin:0 0 10px 0;color:var(--muted);font-size:13px">Write one sentence about how <em>Unmasking AI</em> changed you.</p>
+      <textarea id="finalReflection" placeholder="Example: It made me reframe 'neutral' data as a political choice."></textarea>
+      <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
+        <button id="saveBtn">Save JSON</button>
+        <button id="downloadHtml">Download HTML</button>
+        <span style="color:var(--muted);font-size:13px">or paste into Canvas.</span>
+      </div>
+    </div>
+
+    <footer>Interactive reflection — click the face, unmask the ideas, and leave your note below.</footer>
+  </div>
+
+<script>
+/* ======= Quote sets =======
+  Note: These paraphrases are short, non-exact phrasings of themes from Unmasking AI for safe use.
+  Replace "userQuotes" array with exact short quotes if you have them and want verbatim text.
+*/
+const sets = {
+  paraphrase: [
+    {q:"I was not seen by the machines the same way I saw myself.", note:"Made me realize tools can erase identity by design."},
+    {q:"Datasets tell stories — and some voices are missing.", note:"Prompted me to think about who is counted in data."},
+    {q:"Testing systems reveals bias that metrics miss.", note:"Shows the need for active auditing, not just benchmarks."},
+    {q:"Representation in datasets changes outcomes.", note:"Reinforced why diverse data matters."},
+    {q:"Explainability without fairness is limited.", note:"Explanations must be coupled with accountability."},
+    {q:"I tested till my face was recognized.", note:"Her persistence highlighted how much effort reveals problems."},
+    {q:"Technical measures miss lived experience sometimes.", note:"Pushed me to value qualitative evidence."},
+    {q:"Neutral tools still carry assumptions.", note:"A reminder to question default design choices."},
+    {q:"Audits and inclusive teams improve systems.", note:"Encouraged me to support diverse engineering teams."},
+    {q:"Unmasking is the first step toward repair.", note:"Identifying harms is necessary before fixing them."}
+  ],
+  themes: [
+    {q:"Invisibility and recognition", note:"How systems can fail to 'see' certain people."},
+    {q:"Data as narrative", note:"Datasets encode selective stories."},
+    {q:"Audits as civic tools", note:"Auditing is a public-good activity."},
+    {q:"Representation matters", note:"Who’s in the data determines outputs."},
+    {q:"Explainability vs justice", note:"Explainability alone won't fix harm."},
+    {q:"Persistence and testing", note:"Iterative testing uncovers edge failures."},
+    {q:"Lived experience as evidence", note:"Personal stories are valid technical input."},
+    {q:"Question assumptions", note:"Design defaults reflect values."},
+    {q:"Teams and inclusion", note:"Diverse teams lead to better outcomes."},
+    {q:"From discovery to repair", note:"Identification leads to remediation."}
+  ],
+  user: [
+    // Empty placeholders for verbatim quotes / your custom text.
+    {q:"(paste your quote 1 here)", note:"(your short reaction)"},
+    {q:"(paste your quote 2 here)", note:"(your short reaction)"},
+    {q:"(paste your quote 3 here)", note:"(your short reaction)"},
+    {q:"(paste your quote 4 here)", note:"(your short reaction)"},
+    {q:"(paste your quote 5 here)", note:"(your short reaction)"},
+    {q:"(paste your quote 6 here)", note:"(your short reaction)"},
+    {q:"(paste your quote 7 here)", note:"(your short reaction)"},
+    {q:"(paste your quote 8 here)", note:"(your short reaction)"},
+    {q:"(paste your quote 9 here)", note:"(your short reaction)"},
+    {q:"(paste your quote 10 here)", note:"(your short reaction)"}
+  ]
+};
+
+const grid = document.getElementById('quotesGrid');
+const select = document.getElementById('setSelect');
+const refreshBtn = document.getElementById('refreshBtn');
+
+function clearGrid(){ grid.innerHTML = ''; }
+
+function renderSet(name){
+  clearGrid();
+  const arr = sets[name] || [];
+  arr.forEach((it,i)=>{
+    const el = document.createElement('article');
+    el.className = 'card';
+    el.tabIndex = 0;
+    el.innerHTML = `
+      <div class="quote-text">“${it.q}”</div>
+      <div class="meta">Quote ${i+1}</div>
+      <div class="expand">Read note</div>
+      <div class="expanded-body"><strong>My note:</strong><div style="margin-top:6px">${it.note}</div></div>
+    `;
+    el.querySelector('.expand').addEventListener('click', ()=> el.classList.toggle('expanded'));
+    el.addEventListener('keydown', (ev)=> { if(ev.key === 'Enter') el.classList.toggle('expanded'); });
+    grid.appendChild(el);
+  });
+}
+
+/* initial render */
+renderSet('paraphrase');
+
+refreshBtn.addEventListener('click', ()=> renderSet(select.value));
+
+/* mask / unmask */
+const faceBtn = document.getElementById('faceBtn');
+faceBtn.addEventListener('click', ()=> faceBtn.classList.toggle('unmasked'));
+
+/* save json */
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  const final = document.getElementById('finalReflection').value.trim();
+  const payload = { timestamp: (new Date()).toISOString(), set: select.value, quotes: sets[select.value], final_reflection: final };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'unmasking-reflection.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  alert('Saved reflection JSON.');
+});
+
+/* download current HTML (static snapshot) */
+document.getElementById('downloadHtml').addEventListener('click', ()=>{
+  // create a blob of the current document's outerHTML
+  const doc = '<!doctype html>\\n' + document.documentElement.outerHTML;
+  const blob = new Blob([doc], {type:'text/html'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'unmasking-reflection.html';
+  document.body.appendChild(a); a.click(); a.remove();
+});
+</script>
+</body>
+</html>
