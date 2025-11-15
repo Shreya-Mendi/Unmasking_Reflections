@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Unmasking AI — interactive reflections (fixed)</title>
+<title>Unmasking AI — interactive reflections</title>
 <link rel="preconnect" href="https://fonts.gstatic.com">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
   :root{
-    --bg:#041226; --muted:#94a3b8; --accent:#60a5fa;
+    --bg:#041226; --muted:#94a3b8; --accent:#60a5fa; --card:#081223;
   }
   *{box-sizing:border-box}
   body{
@@ -22,31 +22,50 @@
   header h1{margin:0;font-size:22px}
   header p{margin:2px 0 0 0;color:var(--muted);font-size:14px}
 
+  /* grid */
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:12px}
   @media (max-width:780px){ .grid{grid-template-columns:1fr} }
 
+  /* card container & inner flip */
   .card { perspective:1200px; width:100%; height:220px; cursor:pointer; }
   .card-inner { position:relative; width:100%; height:100%; transform-style:preserve-3d; transition: transform 700ms cubic-bezier(.2,.9,.3,1); border-radius:12px; }
   .card.flipped .card-inner { transform: rotateY(180deg); }
 
   .face-panel { position:absolute; inset:0; backface-visibility:hidden; border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center; background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.03); }
   .front { padding:14px; }
-  .back { transform: rotateY(180deg); padding:16px; align-items:flex-start; justify-content:flex-start; }
+  .back { transform: rotateY(180deg); padding:18px; align-items:flex-start; justify-content:flex-start; }
 
-  .face-ico { width:116px; height:116px; border-radius:16px; display:grid; place-items:center; color:#fff; font-size:48px; box-shadow: 0 8px 20px rgba(2,6,23,0.6); position:relative; overflow:visible; }
+  /* front (masked) face */
+  .face-ico { width:120px; height:120px; border-radius:16px; display:grid; place-items:center; color:#fff; font-size:52px; box-shadow: 0 10px 26px rgba(2,6,23,0.6); position:relative; overflow:visible; }
   .face-emoji { transform-origin:center; animation: floaty 2200ms ease-in-out infinite; display:inline-block; text-shadow: 0 2px 6px rgba(0,0,0,0.35); }
-  @keyframes floaty { 0%{ transform: translateY(0) scale(1) } 50%{ transform: translateY(-6px) scale(1.06) } 100%{ transform: translateY(0) scale(1) } }
+  @keyframes floaty { 0%{ transform: translateY(0) scale(1) } 50%{ transform: translateY(-6px) scale(1.04) } 100%{ transform: translateY(0) scale(1) } }
 
-  .front .caption { margin-top:10px; font-size:12px; color:var(--muted) }
+  /* mask overlay visually covers part of the face */
+  .mask-overlay {
+    position:absolute; left:0; right:0; height:56px; bottom:36px;
+    margin:auto; width:86%; border-radius:10px;
+    background: linear-gradient(90deg, rgba(2,6,23,0.75), rgba(0,0,0,0.6));
+    border: 1px solid rgba(255,255,255,0.04);
+    display:block;
+    pointer-events:none;
+    box-shadow:0 8px 18px rgba(2,6,23,0.45) inset;
+  }
 
-  .quote { font-size:15px; line-height:1.35; margin-bottom:8px; font-weight:600; color:#eaf2ff; }
-  .reflection { font-size:13px; color:var(--muted); margin-top:6px; }
+  .front .caption { margin-top:12px; font-size:13px; color:var(--muted); }
 
-  .small-reflect { margin-top:10px; color:#cfe6ff; font-size:13px; }
+  /* back content styling - larger and more visible */
+  .back .avatar {
+    width:96px;height:96px;border-radius:12px;flex:0 0 96px;display:grid;place-items:center;margin-right:14px;
+    box-shadow:0 10px 26px rgba(2,6,23,0.6);
+  }
+  .back .quote { font-size:18px; line-height:1.3; margin:0 0 10px 0; font-weight:700; color:#ffffff; }
+  .back .reflect { font-size:16px; color:#cfe6ff; line-height:1.45; margin-top:6px; }
+
+  .back-row { display:flex; align-items:flex-start; width:100% }
 
   footer { margin-top:18px; font-size:14px; color:var(--muted); padding:14px; background:rgba(255,255,255,0.01); border-radius:10px; border:1px solid rgba(255,255,255,0.02) }
 
-  /* a tiny focus indicator for keyboard users */
+  /* keyboard focus */
   .card:focus { outline: 3px solid rgba(96,165,250,0.12); outline-offset:6px; border-radius:14px; }
 </style>
 </head>
@@ -59,17 +78,16 @@
             <circle cx="28" cy="28" r="26" fill="rgba(255,255,255,0.03)"/>
             <circle cx="18" cy="22" r="3.4" fill="rgba(255,255,255,0.95)"/>
             <circle cx="38" cy="22" r="3.4" fill="rgba(255,255,255,0.95)"/>
-            <rect x="7" y="29" width="34" height="8" rx="2" fill="rgba(0,0,0,0.6)"/>
           </g>
         </svg>
       </div>
       <div>
         <h1 style="margin:0;font-size:22px">Unmasking AI — interactive reflections</h1>
-        <p style="margin:6px 0 0 0;color:var(--muted)">Click any masked face to flip it and reveal the unmasked face, a quote, and a short reflection.</p>
+        <p style="margin:6px 0 0 0;color:var(--muted)">Click any card to flip it and reveal the unmasked face, the quote, and a clear reflection.</p>
       </div>
     </header>
 
-    <div class="grid" id="cardsGrid"></div>
+    <div class="grid" id="cardsGrid" aria-live="polite"></div>
 
     <div style="height:18px"></div>
 
@@ -98,9 +116,7 @@ const cards = [
   { quote: "Unmasking is the first step toward repair.", reflection: "Identifying harms enables practical remediation." }
 ];
 
-/* ---- Emoji & gradient choices ----
-   You can edit emojis array to change the face emoji for each card.
-*/
+/* ---- Emoji & gradient choices ---- */
 const emojis = ["🧑🏿‍🦱","👩🏽‍🦰","👨🏻‍🦲","🧕","👩🏾‍🦱","👨🏿‍🦱","👩🏼‍🦱","🧑🏽","👱🏽‍♀️","🧑🏾‍🦱"];
 function faceGradient(i){
   const hues = [210,197,190,165,140,250,20,340,280,200];
@@ -119,29 +135,30 @@ cards.forEach((c,i)=>{
   const inner = document.createElement('div');
   inner.className = 'card-inner';
 
-  // front (masked)
+  // front (masked): emoji visible but with a mask overlay
   const front = document.createElement('div');
   front.className = 'face-panel front';
   front.innerHTML = `
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;padding:10px">
       <div class="face-ico" style="background:${faceGradient(i)};">
         <span class="face-emoji" aria-hidden>${emojis[i] || '🙂'}</span>
+        <span class="mask-overlay" aria-hidden></span>
       </div>
-      <div class="caption">Masked face — click to unmask</div>
+      <div class="caption">Click to unmask</div>
     </div>
   `;
 
-  // back (unmasked)
+  // back (unmasked): larger avatar + quote + clearer reflection
   const back = document.createElement('div');
   back.className = 'face-panel back';
   back.innerHTML = `
-    <div style="display:flex;gap:12px;align-items:flex-start;width:100%">
-      <div style="width:84px;height:84px;border-radius:12px;flex:0 0 84px;background:${faceGradient(i)};display:grid;place-items:center">
-        <span style="font-size:34px">${emojis[i] || '🙂'}</span>
+    <div class="back-row">
+      <div class="avatar" style="background:${faceGradient(i)};">
+        <div style="font-size:40px">${emojis[i] || '🙂'}</div>
       </div>
       <div style="flex:1">
         <div class="quote">“${escapeHtml(c.quote)}”</div>
-        <div class="reflection">${escapeHtml(c.reflection)}</div>
+        <div class="reflect">${escapeHtml(c.reflection)}</div>
       </div>
     </div>
   `;
@@ -150,7 +167,7 @@ cards.forEach((c,i)=>{
   inner.appendChild(back);
   outer.appendChild(inner);
 
-  // click / key toggle
+  // click / keyboard toggle
   outer.addEventListener('click', ()=> outer.classList.toggle('flipped'));
   outer.addEventListener('keydown', (e)=> { if(e.key === 'Enter' || e.key === ' ') outer.classList.toggle('flipped'); });
 
